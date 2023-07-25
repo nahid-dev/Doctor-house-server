@@ -129,6 +129,14 @@ async function run() {
       res.send(result);
     });
 
+    // SINGLE DOCTOR FOR DOCTOR PROFILE
+    app.get("/doctor/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await doctorsCollection.findOne(query);
+      res.send(result);
+    });
+
     // DOCTOR ADDED TO THE DB
     app.post("/doctor", verifyJWT, verifyAdmin, async (req, res) => {
       const newDoctor = req.body;
