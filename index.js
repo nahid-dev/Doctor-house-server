@@ -52,6 +52,7 @@ async function run() {
     await client.connect();
 
     const usersCollection = client.db("doc_hose").collection("users");
+    const doctorsCollection = client.db("doc_hose").collection("allDoctors");
 
     // JWT API
     app.post("/jwt", (req, res) => {
@@ -61,6 +62,19 @@ async function run() {
       });
       res.send({ token });
     });
+
+    // VERIFY ADMIN
+    const verifyAdmin = async (req, res, next) => {
+      const email = req.decoded.email;
+      const query = { email: email };
+      const user = await usersCollection.findOne(query);
+      if (user.role !== "admin") {
+        return res
+          .status(403)
+          .send({ error: true, message: "forbidden access" });
+      }
+      next();
+    };
 
     // All User Get
     app.get("/allUsers", verifyJWT, async (req, res) => {
@@ -102,6 +116,23 @@ async function run() {
       const query = { email: email };
       const user = await usersCollection.findOne(query);
       const result = { admin: user?.role === "admin" };
+      res.send(result);
+    });
+
+    // ALL DOCTORS ARE LOAD
+    app.get("/doctors", async (req, res) => {
+      const result = await doctorsCollection
+        .find()
+        .sort({ rating: -1 })
+        .limit(3)
+        .toArray();
+      res.send(result);
+    });
+
+    // DOCTOR ADDED TO THE DB
+    app.post("/doctor", verifyJWT, verifyAdmin, async (req, res) => {
+      const newDoctor = req.body;
+      const result = await doctorsCollection.insertOne(newDoctor);
       res.send(result);
     });
 
