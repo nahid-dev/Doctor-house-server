@@ -137,10 +137,24 @@ async function run() {
       res.send(result);
     });
 
+    // ALL DOCTORS GET
+    app.get("/allDoctors", verifyJWT, verifyAdmin, async (req, res) => {
+      const result = await doctorsCollection.find().toArray();
+      res.send(result);
+    });
+
     // DOCTOR ADDED TO THE DB
     app.post("/doctor", verifyJWT, verifyAdmin, async (req, res) => {
       const newDoctor = req.body;
       const result = await doctorsCollection.insertOne(newDoctor);
+      res.send(result);
+    });
+
+    // DOCTOR DELETE FORM DB
+    app.delete("/doctor/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await doctorsCollection.deleteOne(query);
       res.send(result);
     });
 
