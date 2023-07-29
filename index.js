@@ -167,6 +167,16 @@ async function run() {
       res.send(result);
     });
 
+    // APPOINTMENT GET FORM DB
+    app.get("/myAppointment", async (req, res) => {
+      const email = req.query.email;
+      if (!email) {
+        return res.send([]);
+      }
+      const query = { user_email: email };
+      const result = await appointmentCollection.find(query).toArray();
+      res.send(result);
+    });
     // APPOINTMENT ADDED IN DB
     app.post("/appointment", async (req, res) => {
       const appointment = req.body;
