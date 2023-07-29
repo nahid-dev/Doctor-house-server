@@ -53,6 +53,9 @@ async function run() {
 
     const usersCollection = client.db("doc_hose").collection("users");
     const doctorsCollection = client.db("doc_hose").collection("allDoctors");
+    const appointmentCollection = client
+      .db("doc_hose")
+      .collection("appointments");
 
     // JWT API
     app.post("/jwt", (req, res) => {
@@ -161,6 +164,13 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await doctorsCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    // APPOINTMENT ADDED IN DB
+    app.post("/appointment", async (req, res) => {
+      const appointment = req.body;
+      const result = await appointmentCollection.insertOne(appointment);
       res.send(result);
     });
 
