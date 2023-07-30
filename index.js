@@ -3,6 +3,7 @@ const app = express();
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
+const stripe = require("stripe")(process.env.PAYMENT_SECRET_KEY);
 const port = process.env.PORT || 5000;
 
 // MiddleWare
@@ -56,6 +57,7 @@ async function run() {
     const appointmentCollection = client
       .db("doc_hose")
       .collection("appointments");
+    const paymentCollection = client.db("doc_hose").collection("payments");
 
     // JWT API
     app.post("/jwt", (req, res) => {
@@ -182,6 +184,47 @@ async function run() {
       const appointment = req.body;
       const result = await appointmentCollection.insertOne(appointment);
       res.send(result);
+    });
+
+    // PAYMENT RELATED APIS
+    // PAYMENT INTENT
+    app.post("/create-payment-intent", verifyJWT, async (req, res) => {
+      const { fee } = req.body;
+      const amount = fee * 100;
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: "usd",
+        payment_method_types: ["card"],
+      });
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
+    });
+
+    // PAYMENT INTENT
+    app.post("/payments", verifyJWT, async (req, res) => {
+      const payment = req.body;
+      const insertResult = await paymentCollection.insertOne(payment);
+
+      const filter = { _id: new ObjectId(payment.id) };
+      const existingClass = await appointmentCollection.findOne(filter);
+
+      if (existingClass) {
+        const updateDoc = {
+          $set: {
+            status: "paid",
+            transactionId: payment.transactionId,
+          },
+        };
+
+        const updateResult = await appointmentCollection.updateOne(
+          filter,
+          updateDoc
+        );
+        res.send({ insertResult, updateResult });
+      } else {
+        res.status(404).send("appointment not found");
+      }
     });
 
     // Send a ping to confirm a successful connection
